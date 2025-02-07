@@ -1,19 +1,37 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Card, CardContent } from "@/components/ui/card"
-import { ChevronRight, ChevronDown, ExternalLink, Moon, Sun, FileJson } from "lucide-react"
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  ChevronRight,
+  ChevronDown,
+  ExternalLink,
+  Moon,
+  Sun,
+  FileJson,
+} from "lucide-react";
+
+// Define JSON primitive and recursive types
+type JSONPrimitive = string | number | boolean | null;
+type JSONValue = JSONPrimitive | JSONObject | JSONArray;
+
+interface JSONObject {
+  [key: string]: JSONValue;
+}
+
+// Use a type alias instead of an empty interface for JSONArray to fix ESLint warning.
+type JSONArray = JSONValue[];
 
 type JsonNode = {
-  key: string
-  type: string
-  value?: any
-  children?: JsonNode[]
-  arrayLength?: number
-}
+  key: string;
+  type: "object" | "array" | "string" | "number" | "boolean" | "null";
+  value?: JSONPrimitive;
+  children?: JsonNode[];
+  arrayLength?: number;
+};
 
 const sampleJson = `{
   "user": {
@@ -31,7 +49,7 @@ const sampleJson = `{
     "lastLogin": "2023-05-15T14:30:00Z",
     "profilePicture": null
   }
-}`
+}`;
 
 const typeColors: { [key: string]: string } = {
   object: "text-blue-600 dark:text-blue-400",
@@ -40,71 +58,95 @@ const typeColors: { [key: string]: string } = {
   number: "text-red-600 dark:text-red-400",
   boolean: "text-yellow-600 dark:text-yellow-400",
   null: "text-gray-600 dark:text-gray-400",
-}
+};
 
 export default function Home() {
-  const [jsonInput, setJsonInput] = useState("")
-  const [jsonStructure, setJsonStructure] = useState<JsonNode | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [theme, setTheme] = useState<"light" | "dark">("light")
+  const [jsonInput, setJsonInput] = useState("");
+  const [jsonStructure, setJsonStructure] = useState<JsonNode | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [theme, setTheme] = useState<"light" | "dark">("light");
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem("theme") as "light" | "dark" | null
+    const savedTheme = localStorage.getItem("theme") as "light" | "dark" | null;
     if (savedTheme) {
-      setTheme(savedTheme)
-      document.documentElement.classList.toggle("dark", savedTheme === "dark")
+      setTheme(savedTheme);
+      document.documentElement.classList.toggle("dark", savedTheme === "dark");
     }
-  }, [])
+  }, []);
 
   const toggleTheme = () => {
-    const newTheme = theme === "light" ? "dark" : "light"
-    setTheme(newTheme)
-    localStorage.setItem("theme", newTheme)
-    document.documentElement.classList.toggle("dark", newTheme === "dark")
-  }
+    const newTheme = theme === "light" ? "dark" : "light";
+    setTheme(newTheme);
+    localStorage.setItem("theme", newTheme);
+    document.documentElement.classList.toggle("dark", newTheme === "dark");
+  };
 
   const handleVisualize = () => {
     try {
-      const data = JSON.parse(jsonInput)
-      const structure = parseJsonStructure(data)
-      setJsonStructure(structure)
-      setError(null)
+      // Parse the JSON and assert the type as JSONValue for safety.
+      const data = JSON.parse(jsonInput) as JSONValue;
+      const structure = parseJsonStructure(data);
+      setJsonStructure(structure);
+      setError(null);
     } catch (err) {
       if (err instanceof Error) {
-        setError(`Invalid JSON: ${err.message}`)
+        setError(`Invalid JSON: ${err.message}`);
       } else {
-        setError("Invalid JSON: An unknown error occurred")
+        setError("Invalid JSON: An unknown error occurred");
       }
-      setJsonStructure(null)
+      setJsonStructure(null);
     }
-  }
+  };
 
   const loadSampleJson = () => {
-    setJsonInput(sampleJson)
-    setError(null)
-    setJsonStructure(null)
-  }
+    setJsonInput(sampleJson);
+    setError(null);
+    setJsonStructure(null);
+  };
 
-  const parseJsonStructure = (data: any, key = "root"): JsonNode => {
-    const type = Array.isArray(data) ? "array" : typeof data
-    const node: JsonNode = { key, type }
-
+  // Rewritten parseJsonStructure function using explicit returns
+  const parseJsonStructure = (data: JSONValue, key = "root"): JsonNode => {
     if (data === null) {
-      node.type = "null"
-      node.value = "null"
-    } else if (type === "object") {
-      node.children = Object.entries(data).map(([k, v]) => parseJsonStructure(v, k))
-    } else if (type === "array") {
-      node.arrayLength = data.length
-      if (data.length > 0) {
-        node.children = data.map((item: any, index: number) => parseJsonStructure(item, index.toString()))
-      }
-    } else {
-      node.value = String(data)
+      return { key, type: "null", value: data };
     }
 
-    return node
-  }
+    if (Array.isArray(data)) {
+      return {
+        key,
+        type: "array",
+        arrayLength: data.length,
+        children: data.map((item, index) =>
+          parseJsonStructure(item, index.toString())
+        ),
+      };
+    }
+
+    if (typeof data === "object") {
+      return {
+        key,
+        type: "object",
+        children: Object.entries(data as JSONObject).map(([k, v]) =>
+          parseJsonStructure(v, k)
+        ),
+      };
+    }
+
+    // Now data must be a primitive (string, number, or boolean)
+    if (typeof data === "string") {
+      return { key, type: "string", value: data };
+    }
+
+    if (typeof data === "number") {
+      return { key, type: "number", value: data };
+    }
+
+    if (typeof data === "boolean") {
+      return { key, type: "boolean", value: data };
+    }
+
+    // Should never reach here if all cases are covered
+    throw new Error("Unexpected JSON data type");
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-[#0B1120] py-12 px-4 sm:px-6 lg:px-8 flex flex-col">
@@ -115,14 +157,16 @@ export default function Home() {
             JSON Structure Visualizer
           </h1>
           <p className="mt-3 text-lg text-gray-600 dark:text-gray-300">
-            Paste your JSON and visualize its structure in a user-friendly format.
+            Paste your JSON and visualize its structure in a user-friendly
+            format.
           </p>
         </div>
 
         <Alert className="mb-6">
           <AlertTitle>Data Privacy Notice</AlertTitle>
           <AlertDescription>
-            All data is processed and stored entirely on your device. No information is sent to any server.
+            All data is processed and stored entirely on your device. No
+            information is sent to any server.
           </AlertDescription>
         </Alert>
 
@@ -139,7 +183,11 @@ export default function Home() {
                 <Button onClick={handleVisualize} className="flex-1">
                   Visualize Structure
                 </Button>
-                <Button variant="outline" onClick={loadSampleJson} className="flex-1">
+                <Button
+                  variant="outline"
+                  onClick={loadSampleJson}
+                  className="flex-1"
+                >
                   Load Sample JSON
                 </Button>
               </div>
@@ -149,7 +197,11 @@ export default function Home() {
                 onClick={toggleTheme}
                 className="shrink-0 h-10 w-10 rounded-lg border-0 bg-white/90 dark:bg-gray-800/90 shadow-sm hover:bg-gray-100 dark:hover:bg-gray-700/90"
               >
-                {theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+                {theme === "light" ? (
+                  <Moon className="h-4 w-4" />
+                ) : (
+                  <Sun className="h-4 w-4" />
+                )}
                 <span className="sr-only">Toggle theme</span>
               </Button>
             </div>
@@ -174,7 +226,9 @@ export default function Home() {
       </div>
 
       <footer className="mt-12 text-center space-y-2">
-        <p className="text-sm text-gray-500">Made with passion ❤️ by Kevin Willoughby</p>
+        <p className="text-sm text-gray-500">
+          Made with passion ❤️ by Kevin Willoughby
+        </p>
         <a
           href="https://resume.kvnw.dev"
           target="_blank"
@@ -184,38 +238,52 @@ export default function Home() {
           More of my work
           <ExternalLink size={14} className="ml-1" />
         </a>
-        <p className="text-xs text-gray-400">© {new Date().getFullYear()} Kevin Willoughby. All rights reserved.</p>
+        <p className="text-xs text-gray-400">
+          © {new Date().getFullYear()} Kevin Willoughby. All rights reserved.
+        </p>
       </footer>
     </div>
-  )
+  );
 }
 
 function JsonTreeView({ node }: { node: JsonNode }) {
-  const [isExpanded, setIsExpanded] = useState(true)
+  const [isExpanded, setIsExpanded] = useState(true);
 
-  const toggleExpand = () => setIsExpanded(!isExpanded)
+  const toggleExpand = () => setIsExpanded(!isExpanded);
 
   const renderValue = () => {
     if (node.type === "array") {
-      return `List (${node.arrayLength} items)`
+      return `List (${node.arrayLength} items)`;
     }
     if (node.type === "object") {
-      return "Object"
+      return "Object";
     }
-    return node.value
-  }
+    return node.value;
+  };
 
   return (
     <div className="ml-4 border-l border-gray-200 dark:border-gray-700 pl-4">
       <div className="flex items-center py-2">
         {(node.type === "object" || node.type === "array") && (
           <button onClick={toggleExpand} className="mr-2 focus:outline-none">
-            {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+            {isExpanded ? (
+              <ChevronDown size={16} />
+            ) : (
+              <ChevronRight size={16} />
+            )}
           </button>
         )}
-        <span className="font-medium text-gray-700 dark:text-gray-300">{node.key}</span>
-        <span className={`ml-2 text-sm ${typeColors[node.type]}`}>({node.type})</span>
-        {node.value && <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">{renderValue()}</span>}
+        <span className="font-medium text-gray-700 dark:text-gray-300">
+          {node.key}
+        </span>
+        <span className={`ml-2 text-sm ${typeColors[node.type]}`}>
+          ({node.type})
+        </span>
+        {node.value !== undefined && (
+          <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">
+            {renderValue()}
+          </span>
+        )}
       </div>
       {isExpanded && node.children && (
         <div className="ml-4">
@@ -225,6 +293,5 @@ function JsonTreeView({ node }: { node: JsonNode }) {
         </div>
       )}
     </div>
-  )
+  );
 }
-
