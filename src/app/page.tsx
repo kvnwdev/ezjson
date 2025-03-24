@@ -13,6 +13,7 @@ import {
   Sun,
   FileJson,
 } from "lucide-react";
+import { toast } from "sonner";
 
 // Define JSON primitive and recursive types
 type JSONPrimitive = string | number | boolean | null;
@@ -248,6 +249,8 @@ export default function Home() {
 
 function JsonTreeView({ node }: { node: JsonNode }) {
   const [isExpanded, setIsExpanded] = useState(true);
+  const [showTooltip, setShowTooltip] = useState(false);
+  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
 
   const toggleExpand = () => setIsExpanded(!isExpanded);
 
@@ -261,11 +264,63 @@ function JsonTreeView({ node }: { node: JsonNode }) {
     return node.value;
   };
 
+  const getNodeString = () => {
+    if (node.type === "object" && node.children) {
+      const childrenStr = node.children
+        .map((child) => {
+          if (child.type === "object" || child.type === "array") {
+            return `"${child.key}": ${child.type === "array" ? "[]" : "{}"}`;
+          }
+          return `"${child.key}": ${JSON.stringify(child.value)}`;
+        })
+        .join(", ");
+      return `"${node.key}": { ${childrenStr} }`;
+    }
+    if (node.type === "array" && node.children) {
+      const childrenStr = node.children
+        .map((child) => {
+          if (child.type === "object" || child.type === "array") {
+            return child.type === "array" ? "[]" : "{}";
+          }
+          return JSON.stringify(child.value);
+        })
+        .join(", ");
+      return `"${node.key}": [${childrenStr}]`;
+    }
+    return `"${node.key}": ${JSON.stringify(node.value)}`;
+  };
+
+  const handleCopyValue = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const value = renderValue();
+    if (value !== undefined) {
+      navigator.clipboard.writeText(String(value));
+      toast.success("Value copied to clipboard!");
+    }
+  };
+
+  const handleCopyNode = () => {
+    navigator.clipboard.writeText(getNodeString());
+    toast.success("Node copied to clipboard!");
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    setTooltipPosition({ x: e.clientX + 15, y: e.clientY - 10 });
+  };
+
   return (
     <div className="ml-4 border-l border-gray-200 dark:border-gray-700 pl-4">
-      <div className="flex items-center py-2">
+      <div
+        className="flex items-center py-2 min-w-0 group relative"
+        onMouseEnter={() => setShowTooltip(true)}
+        onMouseLeave={() => setShowTooltip(false)}
+        onMouseMove={handleMouseMove}
+      >
         {(node.type === "object" || node.type === "array") && (
-          <button onClick={toggleExpand} className="mr-2 focus:outline-none">
+          <button
+            onClick={toggleExpand}
+            className="mr-2 flex-shrink-0 focus:outline-none"
+          >
             {isExpanded ? (
               <ChevronDown size={16} />
             ) : (
@@ -273,16 +328,38 @@ function JsonTreeView({ node }: { node: JsonNode }) {
             )}
           </button>
         )}
-        <span className="font-medium text-gray-700 dark:text-gray-300">
-          {node.key}
-        </span>
-        <span className={`ml-2 text-sm ${typeColors[node.type]}`}>
-          ({node.type})
-        </span>
-        {node.value !== undefined && (
-          <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">
-            {renderValue()}
+        <div
+          className="flex items-center flex-1 min-w-0 cursor-pointer hover:opacity-80"
+          onClick={handleCopyNode}
+        >
+          <span className="font-medium text-gray-700 dark:text-gray-300 flex-shrink-0">
+            {node.key}
           </span>
+          <span
+            className={`ml-2 text-sm ${typeColors[node.type]} flex-shrink-0`}
+          >
+            ({node.type})
+          </span>
+          {node.value !== undefined && (
+            <span
+              onClick={handleCopyValue}
+              className="ml-2 text-sm text-gray-500 dark:text-gray-400 truncate group-hover:truncate-none hover:text-gray-700 dark:hover:text-gray-200 transition-colors relative"
+              title={String(renderValue())}
+            >
+              {renderValue()}
+            </span>
+          )}
+        </div>
+        {showTooltip && (
+          <div
+            className="fixed z-50 px-2 py-1 text-xs font-medium text-white bg-gray-900 rounded shadow-lg pointer-events-none animate-in fade-in duration-200"
+            style={{
+              left: tooltipPosition.x,
+              top: tooltipPosition.y,
+            }}
+          >
+            Click to copy
+          </div>
         )}
       </div>
       {isExpanded && node.children && (
