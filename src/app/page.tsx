@@ -13,8 +13,10 @@ import {
   Sparkles,
   ChevronDown,
   ChevronRight,
+  SquareArrowOutUpRight,
 } from "lucide-react";
 import { toast } from "sonner";
+import Link from "next/link";
 
 // Define JSON primitive and recursive types
 type JSONPrimitive = string | number | boolean | null;
@@ -180,10 +182,13 @@ export default function Home() {
       <div className="mx-auto flex max-w-6xl flex-col gap-12 px-6 pb-16 pt-12 lg:flex-row lg:gap-16 lg:px-12 lg:pt-20">
         <aside className="w-full space-y-10 lg:w-72">
           <div className="space-y-5">
-            <span className="text-xs uppercase tracking-[0.3em] text-neutral-500">
-              Kevin Willoughby
-            </span>
-            <h1 className="text-3xl font-semibold tracking-tight">EasyJSON</h1>
+            <Link target="_blank" href="https://kvnw.dev">
+              <span className="text-xs uppercase tracking-[0.3em] text-neutral-500 flex items-center gap-1 hover:text-black">
+                Kevin Willoughby
+                <SquareArrowOutUpRight className="size-3 inline-block" />
+              </span>
+            </Link>
+            <h1 className="text-3xl font-semibold tracking-tight">EZJSON</h1>
             <p className="text-sm leading-relaxed text-neutral-600">
               A minimalist toolkit for making sense of JSON. Explore schemas,
               clean up messy payloads, and prep JSONL for your pipelines — all
@@ -227,8 +232,8 @@ export default function Home() {
             </nav>
           </div>
           <div className="hidden text-xs leading-relaxed text-neutral-500 lg:block">
-            Data never leaves this page. Everything is processed locally in
-            your browser.
+            Data never leaves this page. Everything is processed locally in your
+            browser.
           </div>
         </aside>
 
@@ -255,7 +260,9 @@ export default function Home() {
                   <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                     <div className="flex items-center gap-3 text-sm font-medium text-neutral-600">
                       <FileJson className="size-5 text-neutral-400" />
-                      <span>Paste a JSON payload to explore its structure.</span>
+                      <span>
+                        Paste a JSON payload to explore its structure.
+                      </span>
                     </div>
                     <div className="flex gap-2">
                       <Button
@@ -265,7 +272,9 @@ export default function Home() {
                       >
                         Load sample
                       </Button>
-                      <Button onClick={handleVisualize}>Visualize schema</Button>
+                      <Button onClick={handleVisualize}>
+                        Visualize schema
+                      </Button>
                     </div>
                   </div>
                   <Textarea
@@ -333,11 +342,11 @@ export default function Home() {
                   <div className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
                     <div className="flex items-center justify-between text-xs uppercase tracking-[0.3em] text-neutral-500">
                       <span>Formatted output</span>
-                      {formatterSource && <span>{sourceLabels[formatterSource]}</span>}
+                      {formatterSource && (
+                        <span>{sourceLabels[formatterSource]}</span>
+                      )}
                     </div>
-                    <pre
-                      className="mt-4 max-h-96 overflow-auto whitespace-pre-wrap break-words rounded-xl bg-neutral-950/95 px-4 py-4 text-sm text-neutral-100"
-                    >
+                    <pre className="mt-4 max-h-96 overflow-auto whitespace-pre-wrap break-words rounded-xl bg-neutral-950/95 px-4 py-4 text-sm text-neutral-100">
                       {formatterOutput}
                     </pre>
                   </div>
@@ -386,9 +395,7 @@ export default function Home() {
                       <span>JSONL output</span>
                       {jsonlSource && <span>{sourceLabels[jsonlSource]}</span>}
                     </div>
-                    <pre
-                      className="mt-4 max-h-96 overflow-auto whitespace-pre-wrap break-words rounded-xl bg-neutral-950/95 px-4 py-4 text-sm text-neutral-100"
-                    >
+                    <pre className="mt-4 max-h-96 overflow-auto whitespace-pre-wrap break-words rounded-xl bg-neutral-950/95 px-4 py-4 text-sm text-neutral-100">
                       {jsonlOutput}
                     </pre>
                   </div>
@@ -417,7 +424,9 @@ function parseJsonStructure(data: JSONValue, key = "root"): JsonNode {
       key,
       type: "array",
       arrayLength: data.length,
-      children: data.map((item, index) => parseJsonStructure(item, index.toString())),
+      children: data.map((item, index) =>
+        parseJsonStructure(item, index.toString())
+      ),
     };
   }
 
@@ -477,7 +486,11 @@ function JsonTreeView({ node }: { node: JsonNode }) {
             onClick={() => setIsExpanded(!isExpanded)}
             className="mt-1 text-neutral-400 transition hover:text-neutral-700"
           >
-            {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+            {isExpanded ? (
+              <ChevronDown size={16} />
+            ) : (
+              <ChevronRight size={16} />
+            )}
           </button>
         )}
         <button
@@ -490,7 +503,11 @@ function JsonTreeView({ node }: { node: JsonNode }) {
             </span>
             <span className="text-xs text-neutral-500">{getNodePreview()}</span>
           </div>
-          <span className={`text-xs font-semibold uppercase ${typeColors[node.type]}`}>
+          <span
+            className={`text-xs font-semibold uppercase ${
+              typeColors[node.type]
+            }`}
+          >
             {node.type}
           </span>
         </button>
@@ -585,7 +602,9 @@ function parseFlexibleJson(input: string): FlexibleParseResult {
   }
 }
 
-type LooseObjectResult = { success: true; data: Record<string, unknown> } | { success: false };
+type LooseObjectResult =
+  | { success: true; data: Record<string, unknown> }
+  | { success: false };
 
 function parseLooseObjectLiteral(input: string): LooseObjectResult {
   const trimmed = input.trim();
@@ -669,7 +688,7 @@ function splitTopLevel(input: string): string[] {
       continue;
     }
 
-    if (char === "\"" || char === "'" || char === "`") {
+    if (char === '"' || char === "'" || char === "`") {
       inString = true;
       stringChar = char;
       current += char;
@@ -706,7 +725,10 @@ function splitTopLevel(input: string): string[] {
 }
 
 function sanitiseKey(rawKey: string): string | null {
-  const cleaned = rawKey.trim().replace(/^['"`]/, "").replace(/['"`]$/, "");
+  const cleaned = rawKey
+    .trim()
+    .replace(/^['"`]/, "")
+    .replace(/['"`]$/, "");
   if (!cleaned) {
     return null;
   }
@@ -718,7 +740,9 @@ function toJsonLines(value: unknown): string[] {
     return value.map((item, index) => {
       const stringified = JSON.stringify(item);
       if (typeof stringified !== "string") {
-        throw new Error(`Item at index ${index} cannot be represented as JSON.`);
+        throw new Error(
+          `Item at index ${index} cannot be represented as JSON.`
+        );
       }
       return stringified;
     });
