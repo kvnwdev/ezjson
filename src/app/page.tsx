@@ -335,7 +335,11 @@ export default function Home() {
                       <span>Formatted output</span>
                       {formatterSource && <span>{sourceLabels[formatterSource]}</span>}
                     </div>
-                    <pre className="mt-4 overflow-x-auto rounded-xl bg-neutral-950/95 px-4 py-4 text-sm text-neutral-100">{formatterOutput}</pre>
+                    <pre
+                      className="mt-4 max-h-96 overflow-auto whitespace-pre-wrap break-words rounded-xl bg-neutral-950/95 px-4 py-4 text-sm text-neutral-100"
+                    >
+                      {formatterOutput}
+                    </pre>
                   </div>
                 )}
               </div>
@@ -382,7 +386,11 @@ export default function Home() {
                       <span>JSONL output</span>
                       {jsonlSource && <span>{sourceLabels[jsonlSource]}</span>}
                     </div>
-                    <pre className="mt-4 overflow-x-auto rounded-xl bg-neutral-950/95 px-4 py-4 text-sm text-neutral-100">{jsonlOutput}</pre>
+                    <pre
+                      className="mt-4 max-h-96 overflow-auto whitespace-pre-wrap break-words rounded-xl bg-neutral-950/95 px-4 py-4 text-sm text-neutral-100"
+                    >
+                      {jsonlOutput}
+                    </pre>
                   </div>
                 )}
               </div>
